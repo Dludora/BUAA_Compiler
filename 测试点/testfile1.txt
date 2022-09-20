@@ -1,0 +1,104 @@
+int sb = 0;
+
+void func1()
+{
+    return;
+}
+
+int func2(int a, int b[], int c[][2])
+{
+    return 2;
+}
+
+int func3(int b[])
+{
+    return b[0];
+}
+
+int func4()
+{
+    return 1;
+}
+
+int func5(int a, int b[])
+{
+    return b[0];
+}
+// 主函数定义
+int main()
+{
+    printf("20373820\n");
+    // 常量申明
+    const int a = 1;
+    const int b[2] = {1, 2}, c[2][2] = {{1, 2}, {3, 4}};
+    const int aa = 1, bb = 2, cc = 3, dd = 4;
+    // 变量声明
+    int m;
+    int n[2], o[10][10];
+    int e;
+    int f;
+    e = getint();
+
+    int i = 1;
+    int j[2] = {1, 2}, k[2][2] = {{1, 2}, {3, 4}};
+    int ii = 1, jj = 2, kl = 3;
+    // stmt
+
+    // Lval = 'Exp';
+    m = 1;
+    n[1] = a;
+    o[0][0] = i;
+    o[0][1] = 1;
+    o[0][2] = (i);
+    o[0][3] = func2(1, j, k);
+    o[0][4] = func3(k[1]);
+    o[0][5] = func4();
+    f = func5(1, j);
+    o[0][6] = -1;
+    o[0][7] = +i;
+
+    o[1][0] = (1 + (i * j[0]) / (k[1][1])) % 2;
+    o[1][1] = (1 - (i * k[0][0]) / (k[1][1]));
+    
+    if (m > 0 && n[1] < o[0][0] || (1 + i) >= o[1][1] && (2 * i) <= o[0][0])
+    {
+        ;
+    }
+    else
+    {
+        i = i + 1;
+        func1();
+    }
+    if (m == 0 && !n[1] && o[0][0] != i)
+    {
+        while (k[1][1] > 0)
+        {
+            if (k[1][1] == 1)
+            {
+                break;
+            }
+            else
+            {
+                if (k[0][1] > 2)
+                {
+                    continue;
+                }
+                else
+                {
+                    o[9][9] = getint();
+                }
+            }
+            k[1][1] = k[1][1] - 1;
+            ;
+            printf("1\n");
+            printf("%d", 2);
+        }
+    }
+    {
+        int z;
+    }
+    {
+    }
+
+    return 0;
+}
