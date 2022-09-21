@@ -1,0 +1,4 @@
+<BlockItem>
+<Decl>
+<BType>
+以外所有非终结符
