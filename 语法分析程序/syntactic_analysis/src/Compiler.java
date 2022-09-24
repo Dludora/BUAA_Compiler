@@ -8,11 +8,15 @@ public class Compiler {
         System.setOut(new PrintStream(new FileOutputStream("output.txt")));
 
         Scanner sc = new Scanner(System.in);
-        ArrayList<String> arrayList = new ArrayList<>();
+        ArrayList<String> arrayList1 = new ArrayList<>();
+        ArrayList<String> arrayList2 = new ArrayList<>();
+        String str;
         while (sc.hasNextLine()) {
-            arrayList.add(sc.nextLine().split(" ")[0]);
+            str = sc.nextLine();
+            arrayList1.add(str.split(" ")[0]);
+            arrayList2.add(str.split(" ")[1]);
         }
-        SyntacticAnalysis sa = new SyntacticAnalysis(arrayList);
+        SyntacticAnalysis sa = new SyntacticAnalysis(arrayList1, arrayList2);
         sa.CompUnit();
     }
 }

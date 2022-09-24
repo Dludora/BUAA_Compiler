@@ -5,13 +5,15 @@ import java.util.ArrayList;
 
 public class SyntacticAnalysis implements FirstList {
     private final ArrayList<String> voca;
+    private final ArrayList<String> strs;
     private Vn vn;
     private static int p = 0;
     private Symbols symbol;
     private boolean inCond = false;
 
-    public SyntacticAnalysis(ArrayList<String> voca) {
+    public SyntacticAnalysis(ArrayList<String> voca, ArrayList<String> strs) {
         this.voca = voca;
+        this.strs = strs;
         getVoca();
     }
 
@@ -19,7 +21,8 @@ public class SyntacticAnalysis implements FirstList {
         if (p == voca.size()) {
             error();
         }
-        symbol = Symbols.valueOf(voca.get(p++));
+        symbol = Symbols.valueOf(voca.get(p));
+        System.out.println(symbol + " " + strs.get(p++));
     }
 
     private Symbols preView(int num) {
@@ -37,6 +40,7 @@ public class SyntacticAnalysis implements FirstList {
         if (symbol != Symbols.INTTK) {
             error();
         }
+
         getVoca();
     }
 
@@ -50,24 +54,27 @@ public class SyntacticAnalysis implements FirstList {
 
     private void Exp() {
         /*
-        *   表达式
-        *   AddExp 已完成
-        * */
+         *   表达式
+         *   AddExp 已完成
+         * */
         AddExp();
+
+        System.out.println("<Exp>");
     }
 
     private void Cond() {
         inCond = true;
         LOrExp();
         inCond = false;
+
         System.out.println("<Cond>");
     }
 
     private void LVal() {
         /*
-        *   左值表达式
-        *   Exp 已完成
-        * */
+         *   左值表达式
+         *   Exp 已完成
+         * */
         if (symbol == Symbols.IDENFR) {
             getVoca();
             if (symbol == Symbols.LPARENT) { // 可能是一维数组
@@ -95,11 +102,11 @@ public class SyntacticAnalysis implements FirstList {
 
     private void PrimaryExp() {
         /*
-        *   基本表达式
-        *   Exp 已完成
-        *   Number 已完成
-        *   LVal 已完成
-        * */
+         *   基本表达式
+         *   Exp 已完成
+         *   Number 已完成
+         *   LVal 已完成
+         * */
         // '(' Exp ')'
         if (symbol == Symbols.LPARENT) {
             getVoca();
@@ -135,10 +142,10 @@ public class SyntacticAnalysis implements FirstList {
 
     private void UnaryExp() {
         /*
-        *   一元表达式
-        *   FuncRParams
-        *   PrimaryExp 已完成
-        *   UnaryOp 已完成
+         *   一元表达式
+         *   FuncRParams
+         *   PrimaryExp 已完成
+         *   UnaryOp 已完成
          * */
         // Ident '(' [FuncRParams] ') || LVal = Ident { '[' Exp ']' } in PrimaryExp
         if (symbol == Symbols.IDENFR) {
@@ -240,25 +247,150 @@ public class SyntacticAnalysis implements FirstList {
             getVoca();
             Exp();
         }
+
+        System.out.println("<>FuncRParams>");
     }
 
     private void ConstExp() {
         AddExp();
     }
 
+    private void Stmt() {
+        switch (symbol) {
+            case IFTK -> {
+                getVoca();
+                if (symbol == Symbols.LPARENT) {
+                    Cond();
+                    if (symbol == Symbols.RPARENT) {
+                        getVoca();
+                        Stmt();
+                        if (symbol == Symbols.ELSETK) {
+                            getVoca();
+                            Stmt();
+                        }
+                    } else {
+                        error();
+                    }
+                } else {
+                    error();
+                }
+            }
+            case WHILETK -> {
+                getVoca();
+                if (symbol == Symbols.LPARENT) {
+                    getVoca();
+                    Cond();
+                    if (symbol == Symbols.RPARENT) {
+                        getVoca();
+                        Stmt();
+                    } else {
+                        error();
+                    }
+                } else {
+                    error();
+                }
+            }
+            case BREAKTK, CONTINUETK -> {
+                getVoca();
+                if (symbol == Symbols.SEMICN) {
+                    getVoca();
+                } else {
+                    error();
+                }
+            }
+            case RETURNTK -> {
+                getVoca();
+                if (symbol == Symbols.SEMICN) {
+                    getVoca();
+                } else {
+                    Exp();
+                    if (symbol == Symbols.SEMICN) {
+                        getVoca();
+                    } else {
+                        error();
+                    }
+                }
+            }
+            case PRINTFTK -> {
+                getVoca();
+                if (symbol == Symbols.LPARENT) {
+                    getVoca();
+                    if (symbol == Symbols.STRCON) {
+                        getVoca();
+                        while (symbol == Symbols.COMMA) {
+                            getVoca();
+                            Exp();
+                        }
+                        if (symbol == Symbols.RPARENT) {
+                            getVoca();
+                            if (symbol == Symbols.SEMICN) {
+                                Exp();
+                            } else {
+                                error();
+                            }
+                        } else {
+                            error();
+                        }
+                    } else {
+                        error();
+                    }
+                } else {
+                    error();
+                }
+            }
+            case LBRACE -> {
+                Block();
+            }
+            default -> {
+                LVal();
+                if (symbol == Symbols.ASSIGN) {
+                    getVoca();
+                    if (symbol == Symbols.GETINTTK) {
+                        getVoca();
+                        if (symbol == Symbols.LPARENT) {
+                            getVoca();
+                            if (symbol == Symbols.RPARENT) {
+                                getVoca();
+                                if (symbol == Symbols.SEMICN) {
+                                    getVoca();
+                                } else {
+                                    error();
+                                }
+                            } else {
+                                error();
+                            }
+                        } else {
+                            error();
+                        }
+                    } else {
+                        Exp();
+                    }
+                } else {
+                    error();
+                }
+            }
+        }
+
+        System.out.println("<Stmt>");
+    }
+
     private void BlockItem() {
         /*
-        *   语句块项
-        *   Decl
-        *   Stmt
-        * */
+         *   语句块项
+         *   Decl
+         *   Stmt
+         * */
+        switch (symbol) {
+            case CONSTTK, INTTK -> Decl();
+            default -> Stmt();
+        }
     }
 
     private void Block() {
         /*
-        *   语句块
-        *   BlockItem
-        * */
+         *   语句块
+         *   BlockItem
+         * */
         if (symbol == Symbols.LBRACE) {
             getVoca();
             BlockItem();
@@ -275,28 +407,36 @@ public class SyntacticAnalysis implements FirstList {
     }
 
     private void MainFuncDef() {
-//        getVoca();
-//        getVoca();
-//        if (symbol == Symbols.LPARENT) {
-//            getVoca();
-//            if (symbol == Symbols.RPARENT) {
-//                Block();
-//            } else {
-//                error();
-//                // error
-//            }
-//        } else {
-//            error();
-//            // error
-//        }
+        if (symbol == Symbols.INTTK) {
+            getVoca();
+            if (symbol == Symbols.MAINTK) {
+                getVoca();
+                if (symbol == Symbols.LPARENT) {
+                    getVoca();
+                    if (symbol == Symbols.RPARENT) {
+                        Block();
+                    } else {
+                        error();
+                    }
+                } else {
+                    error();
+                }
+            } else {
+                error();
+            }
+        } else {
+            error();
+        }
+
+        System.out.println("<MainFuncDef>");
     }
 
     private void FuncFParam() {
         /*
-        *   函数形参
-        *   BType 完成
-        *   ConstExp
-        * */
+         *   函数形参
+         *   BType 完成
+         *   ConstExp
+         * */
         BType();
         if (symbol == Symbols.IDENFR) {
             getVoca();
@@ -326,9 +466,9 @@ public class SyntacticAnalysis implements FirstList {
 
     private void FuncFParams() {
         /*
-        *   函数形参表
-        *   FuncFParam 已完成
-        * */
+         *   函数形参表
+         *   FuncFParam 已完成
+         * */
         do {
             FuncFParam();
             getVoca();
@@ -462,9 +602,9 @@ public class SyntacticAnalysis implements FirstList {
 
     private void FuncType() {
         /*
-        *   函数类型
-        *   已完成
-        * */
+         *   函数类型
+         *   已完成
+         * */
         if (symbol == Symbols.VOIDTK || symbol == Symbols.INTTK) {
             System.out.println("<FuncType>");
             return;
@@ -474,11 +614,11 @@ public class SyntacticAnalysis implements FirstList {
 
     private void FuncDef() {
         /*
-        *   函数定义
-        *   FuncType
-        *   FuncFParams
-        *   Block
-        * */
+         *   函数定义
+         *   FuncType
+         *   FuncFParams
+         *   Block
+         * */
         FuncType();
         if (symbol == Symbols.IDENFR) {
             getVoca();
