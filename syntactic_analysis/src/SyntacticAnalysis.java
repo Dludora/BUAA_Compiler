@@ -1,35 +1,32 @@
-import com.sun.xml.internal.bind.v2.model.core.ID;
-import sun.applet.Main;
-
 import java.util.ArrayList;
 
 public class SyntacticAnalysis implements FirstList {
     private final ArrayList<String> voca;
     private final ArrayList<String> strs;
     private Vn vn;
-    private static int p = 0;
+    private static int p = 1;
     private Symbols symbol;
     private boolean inCond = false;
 
     public SyntacticAnalysis(ArrayList<String> voca, ArrayList<String> strs) {
         this.voca = voca;
         this.strs = strs;
-        getVoca();
+        this.symbol = Symbols.valueOf(voca.get(0));
     }
 
     private void getVoca() {
         if (p == voca.size()) {
             error();
         }
-        symbol = Symbols.valueOf(voca.get(p));
-        System.out.println(symbol + " " + strs.get(p++));
+        System.out.println(symbol + " " + strs.get(p - 1));
+        symbol = Symbols.valueOf(voca.get(p++));
     }
 
     private Symbols preView(int num) {
         if (p + num >= voca.size()) {
             return Symbols.NONE;
         }
-        return Symbols.valueOf(voca.get(p + num));
+        return Symbols.valueOf(voca.get(p + num - 1));
     }
 
     private void error() {
@@ -46,10 +43,12 @@ public class SyntacticAnalysis implements FirstList {
 
     private void Number() {
         if (symbol == Symbols.INTCON) {
-            System.out.println("<Number>");
+            getVoca();
+        } else {
+            error();
         }
 
-        error();
+        System.out.println("<Number>");
     }
 
     private void Exp() {
@@ -67,6 +66,7 @@ public class SyntacticAnalysis implements FirstList {
         LOrExp();
         inCond = false;
 
+
         System.out.println("<Cond>");
     }
 
@@ -77,15 +77,15 @@ public class SyntacticAnalysis implements FirstList {
          * */
         if (symbol == Symbols.IDENFR) {
             getVoca();
-            if (symbol == Symbols.LPARENT) { // 可能是一维数组
+            if (symbol == Symbols.LBRACK) { // 可能是一维数组
                 getVoca();
                 Exp();
-                if (symbol == Symbols.RPARENT) {
+                if (symbol == Symbols.RBRACK) {
                     getVoca();
-                    if (symbol == Symbols.LPARENT) {    // 可能是二维数组
+                    if (symbol == Symbols.LBRACK) {    // 可能是二维数组
                         getVoca();
                         Exp();
-                        if (symbol == Symbols.RPARENT) {
+                        if (symbol == Symbols.RBRACK) {
                             getVoca();
                         } else {
                             error();
@@ -97,7 +97,7 @@ public class SyntacticAnalysis implements FirstList {
             }
         }
 
-        System.out.println("LVal");
+        System.out.println("<LVal>");
     }
 
     private void PrimaryExp() {
@@ -137,7 +137,7 @@ public class SyntacticAnalysis implements FirstList {
             error();
         }
 
-        System.out.println("<UnaryOP>");
+        System.out.println("<UnaryOp>");
     }
 
     private void UnaryExp() {
@@ -168,10 +168,9 @@ public class SyntacticAnalysis implements FirstList {
                     error();
                 }
             } else {    // LVal = Ident { '[' Exp ']' } in PrimaryExp
-                getVoca();
                 PrimaryExp();
             }
-        } else if (symbol == Symbols.LPARENT) {     // PrimaryExp
+        } else if (symbol == Symbols.LPARENT || symbol == Symbols.INTCON) {     // PrimaryExp
             PrimaryExp();
         } else {
             UnaryOP();
@@ -184,6 +183,7 @@ public class SyntacticAnalysis implements FirstList {
     private void MulExp() {
         UnaryExp();
         while (symbol == Symbols.MULT || symbol == Symbols.DIV || symbol == Symbols.MOD) {
+            System.out.println("<MulExp>");
             getVoca();
             UnaryExp();
         }
@@ -193,7 +193,8 @@ public class SyntacticAnalysis implements FirstList {
 
     private void AddExp() {
         MulExp();
-        while (symbol == Symbols.PLUS) {
+        while (symbol == Symbols.PLUS || symbol == Symbols.MINU) {
+            System.out.println("<AddExp>");
             getVoca();
             MulExp();
         }
@@ -204,6 +205,7 @@ public class SyntacticAnalysis implements FirstList {
     private void RelExp() {
         AddExp();
         while (symbol == Symbols.LSS || symbol == Symbols.LEQ || symbol == Symbols.GRE || symbol == Symbols.GEQ) {
+            System.out.println("<RelExp>");
             getVoca();
             AddExp();
         }
@@ -214,6 +216,7 @@ public class SyntacticAnalysis implements FirstList {
     private void EqExp() {
         RelExp();
         while (symbol == Symbols.EQL || symbol == Symbols.NEQ) {
+            System.out.println("<EqExp>");
             getVoca();
             RelExp();
         }
@@ -224,6 +227,7 @@ public class SyntacticAnalysis implements FirstList {
     private void LAndExp() {
         EqExp();
         while (symbol == Symbols.AND) {
+            System.out.println("<LAndExp>");
             getVoca();
             EqExp();
         }
@@ -234,6 +238,7 @@ public class SyntacticAnalysis implements FirstList {
     private void LOrExp() {
         LAndExp();
         while (symbol == Symbols.OR) {
+            System.out.println("<LOrExp>");
             getVoca();
             LAndExp();
         }
@@ -248,18 +253,21 @@ public class SyntacticAnalysis implements FirstList {
             Exp();
         }
 
-        System.out.println("<>FuncRParams>");
+        System.out.println("<FuncRParams>");
     }
 
     private void ConstExp() {
         AddExp();
+
+        System.out.println("<ConstExp>");
     }
 
     private void Stmt() {
         switch (symbol) {
-            case IFTK -> {
+            case IFTK:
                 getVoca();
                 if (symbol == Symbols.LPARENT) {
+                    getVoca();
                     Cond();
                     if (symbol == Symbols.RPARENT) {
                         getVoca();
@@ -274,8 +282,8 @@ public class SyntacticAnalysis implements FirstList {
                 } else {
                     error();
                 }
-            }
-            case WHILETK -> {
+                break;
+            case WHILETK:
                 getVoca();
                 if (symbol == Symbols.LPARENT) {
                     getVoca();
@@ -289,16 +297,17 @@ public class SyntacticAnalysis implements FirstList {
                 } else {
                     error();
                 }
-            }
-            case BREAKTK, CONTINUETK -> {
+                break;
+            case BREAKTK:
+            case CONTINUETK:
                 getVoca();
                 if (symbol == Symbols.SEMICN) {
                     getVoca();
                 } else {
                     error();
                 }
-            }
-            case RETURNTK -> {
+                break;
+            case RETURNTK:
                 getVoca();
                 if (symbol == Symbols.SEMICN) {
                     getVoca();
@@ -310,8 +319,8 @@ public class SyntacticAnalysis implements FirstList {
                         error();
                     }
                 }
-            }
-            case PRINTFTK -> {
+                break;
+            case PRINTFTK:
                 getVoca();
                 if (symbol == Symbols.LPARENT) {
                     getVoca();
@@ -324,7 +333,7 @@ public class SyntacticAnalysis implements FirstList {
                         if (symbol == Symbols.RPARENT) {
                             getVoca();
                             if (symbol == Symbols.SEMICN) {
-                                Exp();
+                                getVoca();
                             } else {
                                 error();
                             }
@@ -337,38 +346,70 @@ public class SyntacticAnalysis implements FirstList {
                 } else {
                     error();
                 }
-            }
-            case LBRACE -> {
+                break;
+            case LBRACE:
                 Block();
-            }
-            default -> {
-                LVal();
-                if (symbol == Symbols.ASSIGN) {
-                    getVoca();
-                    if (symbol == Symbols.GETINTTK) {
+                break;
+            case IDENFR:
+                boolean flag = false;
+                for (int i = 1; preView(i) != Symbols.SEMICN; i++) {
+                    if (preView(i) == Symbols.ASSIGN) {
+                        flag = true;
+                        break;
+                    }
+                }
+                if (flag) {
+                    LVal();
+                    if (symbol == Symbols.ASSIGN) {
                         getVoca();
-                        if (symbol == Symbols.LPARENT) {
+                        if (symbol == Symbols.GETINTTK) {           //  LVal '=' 'getint''('')'';'
                             getVoca();
-                            if (symbol == Symbols.RPARENT) {
+                            if (symbol == Symbols.LPARENT) {
                                 getVoca();
-                                if (symbol == Symbols.SEMICN) {
+                                if (symbol == Symbols.RPARENT) {
                                     getVoca();
+                                    if (symbol == Symbols.SEMICN) {
+                                        getVoca();
+                                    } else {
+                                        error();
+                                    }
                                 } else {
                                     error();
                                 }
                             } else {
                                 error();
                             }
-                        } else {
-                            error();
+                        } else {        //  LVal '=' Exp ';'
+                            Exp();
+                            if (symbol == Symbols.SEMICN) {
+                                getVoca();
+                            } else {
+                                error();
+                            }
                         }
                     } else {
-                        Exp();
+                        error();
                     }
                 } else {
-                    error();
+                    Exp();
+                    if (symbol == Symbols.SEMICN) {
+                        getVoca();
+                    } else {
+                        error();
+                    }
                 }
-            }
+                break;
+            default:
+                if (symbol == Symbols.SEMICN) {
+                    getVoca();
+                } else {
+                    Exp();
+                    if (symbol == Symbols.SEMICN) {
+                        getVoca();
+                    } else {
+                        error();
+                    }
+                }
         }
 
         System.out.println("<Stmt>");
@@ -381,8 +422,12 @@ public class SyntacticAnalysis implements FirstList {
          *   Stmt
          * */
         switch (symbol) {
-            case CONSTTK, INTTK -> Decl();
-            default -> Stmt();
+            case CONSTTK:
+            case INTTK:
+                Decl();
+                break;
+            default:
+                Stmt();
         }
     }
 
@@ -393,12 +438,15 @@ public class SyntacticAnalysis implements FirstList {
          * */
         if (symbol == Symbols.LBRACE) {
             getVoca();
-            BlockItem();
-            if (symbol == Symbols.RBRACE) {
+            while (symbol != Symbols.RBRACE) {
+                BlockItem();
+            }
+            if (p < voca.size()) {
                 getVoca();
             } else {
-                error();
+                System.out.println(symbol + " " + strs.get(p - 1));
             }
+//            System.out.println(symbol + " " + strs.get(p - 1));
         } else {
             error();
         }
@@ -414,6 +462,7 @@ public class SyntacticAnalysis implements FirstList {
                 if (symbol == Symbols.LPARENT) {
                     getVoca();
                     if (symbol == Symbols.RPARENT) {
+                        getVoca();
                         Block();
                     } else {
                         error();
@@ -459,9 +508,9 @@ public class SyntacticAnalysis implements FirstList {
             } else {
                 error();
             }
-        } else {
-            error();
         }
+
+        System.out.println("<FuncFParam>");
     }
 
     private void FuncFParams() {
@@ -469,10 +518,11 @@ public class SyntacticAnalysis implements FirstList {
          *   函数形参表
          *   FuncFParam 已完成
          * */
-        do {
-            FuncFParam();
+        FuncFParam();
+        while (symbol == Symbols.COMMA) {
             getVoca();
-        } while (symbol == Symbols.COMMA);
+            FuncFParam();
+        }
 
         System.out.println("<FuncFParams>");
     }
@@ -508,7 +558,7 @@ public class SyntacticAnalysis implements FirstList {
             error();
         }
 
-        System.out.println("<ConstInitVal>");
+        System.out.println("<ConstDef>");
     }
 
     private void ConstInitVal() {
@@ -559,15 +609,22 @@ public class SyntacticAnalysis implements FirstList {
                 ConstExp();
                 if (symbol == Symbols.RBRACK) {
                     getVoca();
-                    if (symbol == Symbols.EQL) {
+                    if (symbol == Symbols.LBRACK) {
                         getVoca();
-                        InitVal();
+                        ConstExp();
+                        if (symbol == Symbols.RBRACK) {
+                            getVoca();
+                        } else {
+                            error();
+                        }
                     }
                 } else {
                     error();
                 }
-            } else {
-                error();
+            }
+            if (symbol == Symbols.ASSIGN) {
+                getVoca();
+                InitVal();
             }
         } else {
             error();
@@ -606,6 +663,7 @@ public class SyntacticAnalysis implements FirstList {
          *   已完成
          * */
         if (symbol == Symbols.VOIDTK || symbol == Symbols.INTTK) {
+            getVoca();
             System.out.println("<FuncType>");
             return;
         }
@@ -669,35 +727,37 @@ public class SyntacticAnalysis implements FirstList {
 
     private void Decl() {
         switch (symbol) {
-            case CONSTTK -> {
+            case CONSTTK:
                 ConstDecl();
-            }
-            case INTTK -> {
+                break;
+            case INTTK:
                 VarDecl();
-            }
-            default -> {
+                break;
+            default:
                 error();
-            }
+                break;
         }
     }
 
     public void CompUnit() {
-        if (symbol == Symbols.INTTK) {
-            if (preView(1) == Symbols.MAINTK) {
-                MainFuncDef();
-            } else {
-                if (preView(2) == Symbols.LPARENT) {     // == '('
-                    FuncDef();
+        while (p < voca.size()) {
+            if (symbol == Symbols.INTTK) {
+                if (preView(1) == Symbols.MAINTK) {
+                    MainFuncDef();
                 } else {
-                    Decl();
+                    if (preView(2) == Symbols.LPARENT) {     // == '('
+                        FuncDef();
+                    } else {
+                        Decl();
+                    }
                 }
+            } else if (symbol == Symbols.CONSTTK) {
+                Decl();
+            } else if (symbol == Symbols.VOIDTK) {
+                FuncDef();
+            } else {
+                error();
             }
-        } else if (symbol == Symbols.CONSTTK) {
-            Decl();
-        } else if (symbol == Symbols.VOIDTK) {
-            FuncDef();
-        } else {
-            error();
         }
 
         System.out.println("<CompUnit>");
