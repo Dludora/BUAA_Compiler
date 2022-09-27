@@ -1,2 +1,2 @@
-# BUAA_Conpile
- BUAA编译原理课程的笔记心得
+# BUAA_Compile
+ 用来BUAA编译原理课程的代码、笔记等
